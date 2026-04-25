@@ -1,4 +1,4 @@
-# TaaS Solidity SDK 🛡️
+# TaaS Solidity SDK 
 
 Secure, verifiable infrastructure for consuming off-chain truth via the **TaaS (Truth-as-a-Service)** AVS on EigenLayer.
 
@@ -9,7 +9,7 @@ Secure, verifiable infrastructure for consuming off-chain truth via the **TaaS (
 
 ---
 
-## 🚀 Quick Start
+##  Quick Start
 
 ### 1. Installation
 
@@ -57,7 +57,7 @@ contract MyApp is TaaSConsumer {
 
 ---
 
-## 🛠️ Advanced Integration
+##  Advanced Integration
 
 ### Aggregation Strategies
 TaaS supports multiple on-chain aggregation strategies to fit your trust model:
@@ -72,7 +72,7 @@ Check our [Documentation Portal](https://docs.friehub.cloud) for a full list of 
 
 ---
 
-## ⛓️ Network Addresses
+##  Network Addresses
 
 | Network | ServiceManager Proxy | Registry Proxy |
 | :--- | :--- | :--- |
@@ -81,7 +81,7 @@ Check our [Documentation Portal](https://docs.friehub.cloud) for a full list of 
 
 ---
 
-## 📂 Repository Contents
+##  Repository Contents
 - **`/src`**: Core interfaces and the `TaaSConsumer` base.
 - **`/examples`**: Full integration examples (see `WeatherConsumer.sol`).
 - **`/script`**: Protocol maintenance and deployment scripts.
