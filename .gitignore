@@ -1,0 +1,19 @@
+# Foundry
+out/
+cache/
+lib/
+broadcast/
+
+# Environment
+.env*
+!.env.example
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Misc
+*.log
+temp/
+.friehub_brain.json
+
