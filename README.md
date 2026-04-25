@@ -1,43 +1,90 @@
-# TaaS Solidity SDK
+# TaaS Solidity SDK 🛡️
 
-Smart contract interfaces and base contracts for the [TaaS Protocol](https://www.friehub.cloud).
+Secure, verifiable infrastructure for consuming off-chain truth via the **TaaS (Truth-as-a-Service)** AVS on EigenLayer.
 
-## Installation
+## Features
+- **Deterministic Verification**: Securely verify off-chain results against the BFT consensus reached by the TaaS network.
+- **AVS Security**: Leverages restaked ETH security and EigenLayer slashability.
+- **Easy Integration**: Inherit from `TaaSConsumer` to automate all security checks.
 
-### Foundry
+---
+
+## 🚀 Quick Start
+
+### 1. Installation
+
+In your Foundry project:
 ```bash
 forge install Friehub/taas-contract
 ```
 
-## Usage
+Update your `remappings.txt`:
+```text
+taas-contract/=lib/taas-contract/src/
+```
 
-### Inherit from TaaSConsumer
-Inheriting from `TaaSConsumer` provides your contract with secure helpers to request facts and verify results.
+### 2. Basic Usage
+
+Inherit from `TaaSConsumer` and use the `onlyTaaSSettled` modifier for security.
 
 ```solidity
 import "taas-contract/TaaSConsumer.sol";
 
-contract MyWeatherApp is TaaSConsumer {
-    constructor(address _serviceManager) TaaSConsumer(_serviceManager) {}
+contract MyApp is TaaSConsumer {
+    constructor(address _sm) TaaSConsumer(_sm) {}
 
-    function fetchWeather(string calldata city) external {
+    // 1. Request Data
+    function startFetch() external {
         _requestTask(
-            "weather.temperature",
-            abi.encode(city),
+            "crypto.eth.price",
+            "", 
             ITaaSServiceManager.AggregationStrategy.MEDIAN,
-            3,
-            67,
+            3,  // min sources
+            67, // quorum %
             uint64(block.timestamp + 1 hours)
         );
     }
 
-    function fulfill(bytes32 taskId, string calldata result) 
+    // 2. Fulfill securely
+    function fulfill(bytes32 taskId, uint256 price) 
         external 
-        onlyTaaSSettled(taskId, bytes(result)) 
+        onlyTaaSSettled(taskId, abi.encode(price)) 
     {
-        // Result is now verified!
+        // 'price' is now verified by the TaaS network!
     }
 }
 ```
 
+---
 
+## 🛠️ Advanced Integration
+
+### Aggregation Strategies
+TaaS supports multiple on-chain aggregation strategies to fit your trust model:
+- `MEDIAN`: Best for price feeds (requires `uint256`).
+- `MAJORITY`: Best for string or boolean data.
+- `UNION`: Returns the collection of all unique historical values.
+- `FIRST`: Returns the first verified TEE proof (lowest latency).
+- `BLS_QUORUM`: Full stake-weighted signature aggregation.
+
+### Capability Registry
+Check our [Documentation Portal](https://docs.friehub.cloud) for a full list of supported capabilities (e.g., `weather.temperature`, `sports.football.score`, `crypto.btc.price`).
+
+---
+
+## ⛓️ Network Addresses
+
+| Network | ServiceManager Proxy | Registry Proxy |
+| :--- | :--- | :--- |
+| **Ethereum Sepolia** | `0x886bbbb92e1c167e59ed63d6befbcb8f6da6f90c` | `0x4044...` |
+| **Hoodi (EigenLayer)** | `0x6942881Bbf662549cBA6AeC14b885fA27d0eBBd6` | `0x8bA3...` |
+
+---
+
+## 📂 Repository Contents
+- **`/src`**: Core interfaces and the `TaaSConsumer` base.
+- **`/examples`**: Full integration examples (see `WeatherConsumer.sol`).
+- **`/script`**: Protocol maintenance and deployment scripts.
+
+## License
+MIT - Friehub
