@@ -89,4 +89,16 @@ interface ITaaSServiceManager {
     ) external;
 
     function verifyTeeProof(bytes memory proof, bytes32 dataHash) external view returns (bool);
+    
+    function tasks(bytes32 taskId) external view returns (
+        address creator,
+        bytes32 resultHash,
+        AggregationStrategy strategy,
+        uint32 minSources,
+        uint32 quorumThreshold,
+        uint64 deadline,
+        uint32 referenceBlock,
+        bool completed,
+        bool challenged
+    );
 }

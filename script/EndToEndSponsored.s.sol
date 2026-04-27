@@ -73,7 +73,7 @@ contract EndToEndSponsored is Script {
         // 5. Setup TaaS Metadata
         TaaSMockVerifier verifier = new TaaSMockVerifier();
         TaaSServiceManager(address(sManagerProxy)).setVerifier("mock", address(verifier));
-        TaaSServiceManager(address(sManagerProxy)).setDisputeBond(0.1 ether);
+        TaaSServiceManager(address(sManagerProxy)).updateMinStake(0.1 ether);
 
         // 6. Deploy the Node's Smart Account (Predictable)
         // This simulates what 'hot-core account deploy' does

@@ -74,10 +74,12 @@ Check our [Documentation Portal](https://docs.friehub.cloud) for a full list of 
 
 ##  Network Addresses
 
-| Network | ServiceManager Proxy | Registry Proxy |
-| :--- | :--- | :--- |
-| **Ethereum Sepolia** | `0x886bbbb92e1c167e59ed63d6befbcb8f6da6f90c` | `0x4044...` |
-| **Hoodi (EigenLayer)** | `0x6942881Bbf662549cBA6AeC14b885fA27d0eBBd6` | `0x8bA3...` |
+| Network | ServiceManager Proxy | Registry Proxy | TruthPaymaster |
+| :--- | :--- | :--- | :--- |
+| **Ethereum Sepolia** | `0x886bbbb92e1c167e59ed63d6befbcb8f6da6f90c` | `0x219a1bd8c73893cf634ef00492b37eb1b2c65a68` | `0x41c02ac0fc69de0277c8b0b3c12847974d63bd19` |
+| **Hoodi (Holesky)** | `0x6942881Bbf662549cBA6AeC14b885fA27d0eBBd6` | `0x46a6d51d031e7a7cb8ba613978188542eb2b1209` | `TBD (Deploying)` |
+| **Optimism Sepolia (Spoke)** | `0x98fC7D305a41beE0a7D877d94B34A3E48CB57904` | `N/A (Hub-Sync)` | `N/A (Relay-Payer)` |
+| **BSC Testnet (Spoke)** | `0x98fC7D305a41beE0a7D877d94B34A3E48CB57904` | `N/A (Hub-Sync)` | `N/A (Relay-Payer)` |
 
 ---
 
