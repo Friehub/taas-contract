@@ -16,6 +16,7 @@ contract TaaSSpokeServiceManager is AccessControl {
     /* ROLES */
     bytes32 public constant SIGNER_UPDATER_ROLE = keccak256("SIGNER_UPDATER_ROLE");
     bytes32 public constant OPERATOR_ROLE = keccak256("OPERATOR_ROLE");
+    bytes32 public constant RELAYER_ROLE = keccak256("RELAYER_ROLE");
 
     /* TYPES */
     enum AggregationStrategy { 
@@ -109,17 +110,24 @@ contract TaaSSpokeServiceManager is AccessControl {
         bytes32 resultHash,
         bytes calldata result,
         bytes[] calldata signatures
-    ) external {
+    ) external onlyRole(RELAYER_ROLE) {
+        require(keccak256(result) == resultHash, "Result hash mismatch");
         Task storage task = tasks[taskId];
         require(!task.completed, "Task already completed");
         
         uint32 threshold = task.minSources > 0 ? task.minSources : defaultThreshold;
         require(signatures.length >= threshold, "Insufficient signatures for quorum");
 
+        // [HARDENING] Domain-specific binding (ChainID + Contract Address)
+        // Prevents cross-chain replay of operator signatures.
+        bytes32 domainSeparatedHash = keccak256(
+            abi.encode(block.chainid, address(this), taskId, resultHash)
+        );
+
         // Verify that each signature is valid and from an authorized operator
         address[] memory signers = new address[](signatures.length);
         for (uint i = 0; i < signatures.length; i++) {
-            address signer = resultHash.toEthSignedMessageHash().recover(signatures[i]);
+            address signer = domainSeparatedHash.toEthSignedMessageHash().recover(signatures[i]);
             require(hasRole(OPERATOR_ROLE, signer), "Unauthorized signer detected");
             
             // Ensure no duplicate signatures

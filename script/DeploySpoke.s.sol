@@ -13,6 +13,9 @@ contract DeploySpoke is Script {
 
         TaaSSpokeServiceManager manager = new TaaSSpokeServiceManager(admin);
         
+        address relayer = vm.envAddress("RELAYER_ADDRESS");
+        manager.grantRole(manager.RELAYER_ROLE(), relayer);
+        
         console.log("TaaSSpokeServiceManager deployed at:", address(manager));
         console.log("Admin address:", admin);
 
