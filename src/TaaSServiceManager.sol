@@ -64,8 +64,8 @@ contract TaaSServiceManager is ServiceManagerBase, UUPSUpgradeable, AccessContro
     uint32 public challengeWindow = 50;
 
     // Circuit Breaker State
-    mapping(address => uint32) public relayerDailyLimit; // Max txs per day
-    mapping(address => uint32) public relayerCurrentSpend;
+    mapping(address => uint256) public relayerDailyLimit; // Max spend per day
+    mapping(address => uint256) public relayerCurrentSpend;
     mapping(address => uint256) public relayerLastRefill;
     
     event DefaultQuorumThresholdUpdated(uint32 oldThreshold, uint32 newThreshold);
@@ -127,7 +127,7 @@ contract TaaSServiceManager is ServiceManagerBase, UUPSUpgradeable, AccessContro
     modifier enforceRelayerLimits() {
         require(hasRole(RELAYER_ROLE, msg.sender), "Unauthorized Relayer");
         
-        uint32 limit = relayerDailyLimit[msg.sender];
+        uint256 limit = relayerDailyLimit[msg.sender];
         if (limit > 0) {
             // Refill window check (24 hours)
             if (block.timestamp >= relayerLastRefill[msg.sender] + 1 days) {
@@ -243,7 +243,7 @@ contract TaaSServiceManager is ServiceManagerBase, UUPSUpgradeable, AccessContro
     /**
      * @notice Sets the daily transaction limit for an authorized relayer.
      */
-    function setRelayerLimit(address relayer, uint32 dailyLimit) external onlyRole(PARAMETER_UPDATER_ROLE) {
+    function updateRelayerLimit(address relayer, uint256 dailyLimit) external onlyRole(PARAMETER_UPDATER_ROLE) {
         relayerDailyLimit[relayer] = dailyLimit;
         _grantRole(RELAYER_ROLE, relayer);
     }
