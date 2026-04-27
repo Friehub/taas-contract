@@ -29,7 +29,7 @@ contract DeployMiddleware is Script {
         // Sepolia Core Addresses
         IDelegationManager delegationManager = IDelegationManager(0xD4A7E1Bd8015057293f0D0A557088c286942e84b);
         IAVSDirectory avsDirectory = IAVSDirectory(0xa789c91ECDdae96865913130B786140Ee17aF545);
-        IAllocationManager allocationManager = IAllocationManager(0xD3651Bc74A7C5F9a6dAc10E7E24e2E2e7B682D6E);
+        IAllocationManager allocationManager = IAllocationManager(0xD3651bC74a7C5F9a6dAC10E7e24E2e2E7b682d6E);
         
         // We'll use the deployer as a temporary pauser registry if not specified
         IPauserRegistry pauserRegistry = IPauserRegistry(address(0)); // Standard practice for fresh boot

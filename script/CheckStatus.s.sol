@@ -2,6 +2,7 @@
 pragma solidity ^0.8.12;
 
 import "forge-std/Script.sol";
+import {IAVSDirectory} from "@eigenlayer-contracts/src/contracts/interfaces/IAVSDirectory.sol";
 interface IDelegationManager {
     function getOperatorStake(address operator, address strategy) external view returns (uint256);
 }
@@ -10,7 +11,7 @@ contract CheckStatus is Script {
     // Sepolia Addresses
     address public constant AVS_DIRECTORY = 0xa789c91ECDdae96865913130B786140Ee17aF545;
     address public constant SERVICE_MANAGER = 0x8619dabd357CD4eF252C847ac1063a76A60F2261;
-    address public constant DELEGATION_MANAGER = 0xA44151489DAfCC7da8048601610E4931e4af565; // Sepolia
+    address public constant DELEGATION_MANAGER = 0xa44151489Dafcc7Da8048601610e4931e4Af565a; // Sepolia (Verified Checksum)
     address public constant BEACON_ETH_STRATEGY = 0xbeaC0eeEeeeeEEeEeEEEEeeEEeEeeeEeeEEBEaC0;
     address public constant DEFAULT_OPERATOR = 0xc1b5Dd31524aBF5d890C369509095A5bEF5d34fb;
 
@@ -18,15 +19,10 @@ contract CheckStatus is Script {
         address operator = vm.envOr("OPERATOR_ADDRESS", DEFAULT_OPERATOR);
         IAVSDirectory avsDirectory = IAVSDirectory(AVS_DIRECTORY);
         
-        // In EigenLayer, we query the avsOperatorStatus mapping
-        // Since it's a public mapping, we can use the selector directly if the interface is missing it
-        // Or we can just check if the operator is allowed to register
-        
         console.log("--- TaaS AVS Verification Audit ---");
         console.log("AVS ServiceManager:", SERVICE_MANAGER);
         console.log("Operator Address:", operator);
         
-        // Manual call to the mapping
         bytes memory data = abi.encodeWithSignature("avsOperatorStatus(address,address)", SERVICE_MANAGER, operator);
         (bool success, bytes memory result) = AVS_DIRECTORY.staticcall(data);
         

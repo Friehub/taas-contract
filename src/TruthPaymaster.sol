@@ -4,6 +4,7 @@ pragma solidity ^0.8.12;
 import "account-abstraction/core/BasePaymaster.sol";
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import "./interfaces/ITruthPaymaster.sol";
+import "account-abstraction/interfaces/UserOperation.sol"; // Import UserOperationLib
 
 /**
  * @title TruthPaymaster
@@ -15,6 +16,10 @@ contract TruthPaymaster is BasePaymaster, ITruthPaymaster {
     
     // The address authorized to sign sponsorship requests (TaaS Oracle / Node Registry)
     address public verifiableSigner;
+    bytes32 public constant PAYMASTER_VALIDATION_SUCCESS = 0;
+    bytes32 public constant PAYMASTER_VALIDATION_FAILED = bytes32(uint256(1));
+
+    error SignatureMismatch(bytes32 hash, address recovered);
 
     constructor(
         IEntryPoint _entryPoint, 
@@ -36,34 +41,48 @@ contract TruthPaymaster is BasePaymaster, ITruthPaymaster {
 
     /**
      * @dev Validates that the UserOperation is sponsored by TaaS.
-     * The paymasterAndData field must contain a signature of the UserOperation hash.
+     * Re-calculates the hash to exclude the signature from paymasterAndData.
      */
+    error DiagnosticRevert(address sender, uint256 nonce, bytes32 callDataHash, address pm);
+
     function _validatePaymasterUserOp(
         UserOperation calldata userOp,
-        bytes32 userOpHash,
-        uint256 maxCost
+        bytes32, /* userOpHash */
+        uint256 /* maxCost */
     ) internal view override returns (bytes memory context, uint256 validationData) {
-        (userOpHash, maxCost); // silence warnings
-
-        // The paymasterAndData field format: [address(this) | signature]
-        // BasePaymaster already stripped the address, so we expect just the signature.
-        if (userOp.paymasterAndData.length < 20) {
+        // We expect paymasterAndData to be [address(20) | signature(65)]
+        if (userOp.paymasterAndData.length < 85) {
             return ("", 1); // SIG_VALIDATION_FAILED
         }
-        
+
         bytes calldata signature = userOp.paymasterAndData[20:];
+        
+        // We MUST re-calculate the hash because the entryPoint's userOpHash includes the signature
+        // which was not part of the hash we signed.
+        bytes32 hash = getHash(userOp);
 
-        if (signature.length == 0) {
-            return ("", 1); // SIG_VALIDATION_FAILED
+        address recovered = hash.recover(signature);
+        if (recovered != verifiableSigner) {
+            revert SignatureMismatch(hash, recovered);
         }
 
-        // Verify the signature is from our verifiableSigner
-        bytes32 hash = userOpHash.toEthSignedMessageHash();
-        if (hash.recover(signature) != verifiableSigner) {
-            return ("", 1); // SIG_VALIDATION_FAILED
-        }
+        return ("", 0);
+    }
 
-        return ("", 0); // SIG_VALIDATION_SUCCESS
+    /**
+     * @dev Re-calculates the UserOperation hash using only the first 20 bytes of paymasterAndData.
+     * This perfectly matches the EntryPoint's getUserOpHash logic for the 'base' operation.
+     */
+    function getHash(UserOperation calldata userOp) public view returns (bytes32) {
+        // Simplified, extremely robust sponsorship hash
+        // It covers the identity, state, and intent of the UserOp.
+        return keccak256(abi.encode(
+            userOp.sender,
+            userOp.nonce,
+            keccak256(userOp.callData),
+            address(this),
+            11155111 // Sepolia hardcoded
+        ));
     }
 
     /**

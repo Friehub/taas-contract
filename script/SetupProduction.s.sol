@@ -24,7 +24,7 @@ contract SetupProduction is Script {
         TaaSServiceManager sManager = TaaSServiceManager(serviceManagerProxy);
 
         // 1. Configure Min Stake (Standard institutional 1 ETH)
-        sManager.setMinStake(1 ether);
+        sManager.updateMinStake(1 ether);
         console.log("Minimum Stake set to 1 ETH");
 
         // 2. Grant Roles (if not already set)
