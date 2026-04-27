@@ -34,6 +34,7 @@ contract TaaSServiceManager is ServiceManagerBase, UUPSUpgradeable, AccessContro
     bytes32 public constant SERVICE_MANAGER_ADMIN_ROLE = keccak256("SERVICE_MANAGER_ADMIN_ROLE");
     bytes32 public constant PARAMETER_UPDATER_ROLE = keccak256("PARAMETER_UPDATER_ROLE");
     bytes32 public constant SLASHER_ROLE = keccak256("SLASHER_ROLE");
+    bytes32 public constant RELAYER_ROLE = keccak256("RELAYER_ROLE");
 
     /* ERRORS */
     error TaskAlreadyResponded(bytes32 taskId);
@@ -41,6 +42,7 @@ contract TaaSServiceManager is ServiceManagerBase, UUPSUpgradeable, AccessContro
     error VerifierNotFound(string provider);
     error UnauthorizedCaller();
     error InsufficientStake(address operator, uint256 stake, uint256 minStake);
+    error RelayerSpendingLimitExceeded(address relayer);
 
     /* EVENTS */
     event VerifierUpdated(string provider, address verifier);
@@ -60,6 +62,11 @@ contract TaaSServiceManager is ServiceManagerBase, UUPSUpgradeable, AccessContro
     uint32 public defaultQuorumThreshold = 67; // 67% majority
     uint32 public minimumSourceFallback = 3; // Absolute signatures required if total stake is 0
     uint32 public challengeWindow = 50;
+
+    // Circuit Breaker State
+    mapping(address => uint32) public relayerDailyLimit; // Max txs per day
+    mapping(address => uint32) public relayerCurrentSpend;
+    mapping(address => uint256) public relayerLastRefill;
     
     event DefaultQuorumThresholdUpdated(uint32 oldThreshold, uint32 newThreshold);
     event MinimumSourceFallbackUpdated(uint32 oldFallback, uint32 newFallback);
@@ -111,6 +118,28 @@ contract TaaSServiceManager is ServiceManagerBase, UUPSUpgradeable, AccessContro
     modifier onlyStakedOperator() {
         uint256 stake = _stakeRegistry.weightOfOperatorForQuorum(0, msg.sender);
         if (stake < minStake) revert InsufficientStake(msg.sender, stake, minStake);
+        _;
+    }
+
+    /**
+     * @notice Enforces relay-specific security and volume limits.
+     */
+    modifier enforceRelayerLimits() {
+        require(hasRole(RELAYER_ROLE, msg.sender), "Unauthorized Relayer");
+        
+        uint32 limit = relayerDailyLimit[msg.sender];
+        if (limit > 0) {
+            // Refill window check (24 hours)
+            if (block.timestamp >= relayerLastRefill[msg.sender] + 1 days) {
+                relayerCurrentSpend[msg.sender] = 0;
+                relayerLastRefill[msg.sender] = block.timestamp;
+            }
+
+            if (relayerCurrentSpend[msg.sender] >= limit) {
+                revert RelayerSpendingLimitExceeded(msg.sender);
+            }
+            relayerCurrentSpend[msg.sender]++;
+        }
         _;
     }
 
@@ -209,6 +238,14 @@ contract TaaSServiceManager is ServiceManagerBase, UUPSUpgradeable, AccessContro
     function setCapabilityRegistry(address _registry) external onlyRole(SERVICE_MANAGER_ADMIN_ROLE) {
         require(_registry != address(0), "Invalid registry address");
         capabilityRegistry = _registry;
+    }
+
+    /**
+     * @notice Sets the daily transaction limit for an authorized relayer.
+     */
+    function setRelayerLimit(address relayer, uint32 dailyLimit) external onlyRole(PARAMETER_UPDATER_ROLE) {
+        relayerDailyLimit[relayer] = dailyLimit;
+        _grantRole(RELAYER_ROLE, relayer);
     }
 
     /**
@@ -329,7 +366,7 @@ contract TaaSServiceManager is ServiceManagerBase, UUPSUpgradeable, AccessContro
         bytes32 resultHash,
         bytes calldata result,
         IBLSSignatureChecker.NonSignerStakesAndSignature calldata nonSignerStakesAndSignature
-    ) external onlyElected(taskId) {
+    ) external onlyElected(taskId) enforceRelayerLimits {
         Task storage task = tasks[taskId];
         if (task.completed) revert TaskAlreadyResponded(taskId);
         
